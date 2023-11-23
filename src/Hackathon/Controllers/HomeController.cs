@@ -24,7 +24,7 @@ public class HomeController : ControllerBase
     #region HTTP Chanels
 
     [HttpGet(Name = "GetTest")]
-    public string Get()
+    public string? Get()
     {
         return "Test";
     }
