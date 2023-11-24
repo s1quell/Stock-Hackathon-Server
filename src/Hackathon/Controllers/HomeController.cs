@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace Hackathon.Controllers;
@@ -24,6 +25,7 @@ public class HomeController : ControllerBase
     #region HTTP Chanels
 
     [HttpGet(Name = "GetTest")]
+    [Authorize(Roles = "Admin")]
     public string? Get()
     {
         return "Test";

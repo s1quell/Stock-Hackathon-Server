@@ -18,4 +18,11 @@ public class User
     
     [NotNull]
     public string? Password { get; set; }
+    
+    [NotNull]
+    public string? Role { get; set; }
+    
+    public string? RegistrationDate { get; set; }
+    
+    public string? LastLogin { get; set; }
 }

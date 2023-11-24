@@ -79,6 +79,8 @@ public class DatabaseController : DbContext
         _login = login;
         _password = password;
         _schema = schema;
+
+        _instance = new DatabaseController();
     }
     
 
