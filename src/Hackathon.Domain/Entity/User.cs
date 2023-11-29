@@ -10,7 +10,6 @@ public class User
     /// <summary>
     /// Уникальный идентификатор пользователя
     /// </summary>
-    [NotNull]
     public int Id { get; set; }
     
     [NotNull]
@@ -21,6 +20,11 @@ public class User
     
     [NotNull]
     public string? Role { get; set; }
+    
+    /// <summary>
+    /// ФИО пользователя
+    /// </summary>
+    public string? Name { get; set; }
     
     public string? RegistrationDate { get; set; }
     

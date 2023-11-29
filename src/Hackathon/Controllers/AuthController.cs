@@ -2,6 +2,8 @@ using Hackathon.Core.Configuration;
 using Hackathon.Core.Database;
 using Hackathon.Core.Helpers;
 using Hackathon.Core.Models;
+using Hackathon.Domain.Entity;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 
@@ -54,7 +56,7 @@ public class AuthController : ControllerBase
             // Создаем ответ на авторизованного пользователя
             var data = new
             {
-                Token = new AuthModel().GetToken(user.Username, user.Role),
+                Token = new AuthModel().GetToken(user.Username, user.Role, user.Id),
                 Lifetime = JwtConfigurator.LifeTime,
                 Role = user.Role
             };
@@ -69,6 +71,47 @@ public class AuthController : ControllerBase
             return BadRequest(e.Message);
         }
     }
+    
+    /// <summary>
+    /// Регистрация пользователя в системе производится только администратором
+    /// </summary>
+    /// <param name="login">Логин, который используется в формате регистрации пользвователя</param>
+    /// <param name="password">Пароль пользователя в системе, через который он будет проводить регистрацию</param>
+    /// <returns>HTTP ответ с кодами 400 и 200</returns>
+    [HttpPost(Name = "Register")]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Register(string? login, string? password)
+    {
+        try
+        {
+            if (string.IsNullOrWhiteSpace(login) ||
+                string.IsNullOrWhiteSpace(password)
+               )
+                return BadRequest("Неправльные данные запроса");
 
+            var user = await DatabaseController.GetInstance().Users!
+                .FirstOrDefaultAsync(x => x.Username == login);
+
+            // Отрабатываем ошибку уже созданного пользователя
+            if (user != null)
+                return BadRequest("Такой пользователь уже существует");
+
+            await DatabaseController.GetInstance().Users!.AddAsync(new User()
+            {
+                Username = login,
+                Password = Sha256Helper.Convert(password),
+                Role = "Client"
+            });
+
+            return Ok($"Пользователь с логином {login} добавлен");
+        }
+        catch (Exception e)
+        {
+            // TODO Сделать полноценную обработку ошибок
+            _logger.LogError(e.Message);
+            
+            return BadRequest(e.Message);
+        }
+    }
     #endregion
 }

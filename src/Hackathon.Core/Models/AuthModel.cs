@@ -23,17 +23,19 @@ public class AuthModel
     /// </summary>
     /// <param name="username">Имя пользователя</param>
     /// <param name="role">Роль пользователя в системе</param>
+    /// <param name="userId">Уникальный идентификатор пользователя в системе</param>
     /// <returns>JWT-токен в формате <see cref="string"/></returns>
     /// <exception cref="AuthException">Ошибка введенных данных</exception>
-    public string GetToken(string? username, string? role)
+    public string GetToken(string? username, string? role, int? userId)
     {
-        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(role))
+        if (string.IsNullOrWhiteSpace(username) || string.IsNullOrWhiteSpace(role) || string.IsNullOrWhiteSpace(userId.ToString()))
             throw new AuthException("Неверно введены данные о пользователе для идентификации в системе");
         
         var claims = new List<Claim>
         {
             new Claim(ClaimTypes.Name, username),
             new Claim(ClaimTypes.Role, role),
+            new Claim(ClaimTypes.NameIdentifier, userId.ToString() ?? string.Empty),
         };
         
         var jwt = new JwtSecurityToken(
