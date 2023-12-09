@@ -1,11 +1,16 @@
+#region Usings
+
 using Hackathon.Core.Configuration;
 using Hackathon.Core.Database;
 using Hackathon.Core.Helpers;
 using Hackathon.Core.Models;
+using Hackathon.Domain.ApiModels.Auth;
 using Hackathon.Domain.Entity;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+
+#endregion
 
 namespace Hackathon.Controllers;
 
@@ -15,13 +20,13 @@ public class AuthController : ControllerBase
 {
     #region Private Members
 
-    private readonly ILogger<HomeController> _logger;
+    private readonly ILogger<AuthController> _logger;
     
     #endregion
 
     #region Constructor
 
-    public AuthController(ILogger<HomeController> logger)
+    public AuthController(ILogger<AuthController> logger)
     {
         _logger = logger;
     }
@@ -29,25 +34,28 @@ public class AuthController : ControllerBase
     #endregion
 
     #region Public Methods Post
+
+    // TODO пример запросов
     
     /// <summary>
-    /// POST метод авторизации пользователя в системе
+    /// Авторизация пользователя
     /// </summary>
-    /// <param name="username">Имя пользователя</param>
-    /// <param name="password">Пароль пользователя в системе</param>
+    /// <param name="loginModel">Модель представления данных для авториазации в системе</param>
     /// <returns>Ответ, который содержит в себе специальный идентификационный токен</returns>
+    /// <response code="200">Успешное выполнение</response>
+    /// <response code="400">Пользователя не существует или неверный логин или пароль</response>
     [HttpPost]
-    public async Task<IActionResult> Login(string? username, string? password)
+    public async Task<IActionResult> Login([FromBody]LoginModel loginModel)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(username) ||
-                string.IsNullOrWhiteSpace(password)
+            if (string.IsNullOrWhiteSpace(loginModel.Email) ||
+                string.IsNullOrWhiteSpace(loginModel.Password)
                )
                 return BadRequest("Неправльные данные для авторизации");
 
             var user = await DatabaseController.GetInstance().Users!
-                .FirstOrDefaultAsync(x => x.Username == username && x.Password == Sha256Helper.Convert(password));
+                .FirstOrDefaultAsync(x => x.Email == loginModel.Email && x.Password == Sha256Helper.Convert(loginModel.Password));
 
             // Отрабатываем ошибку
             if (user == null)
@@ -56,9 +64,10 @@ public class AuthController : ControllerBase
             // Создаем ответ на авторизованного пользователя
             var data = new
             {
-                Token = new AuthModel().GetToken(user.Username, user.Role, user.Id),
+                Token = new AuthModel().GetToken(user.Email, user.Role, user.Id),
                 Lifetime = JwtConfigurator.LifeTime,
-                Role = user.Role
+                Role = user.Role,
+                ClientId = user.Id,
             };
 
             return Ok(data);
@@ -73,24 +82,24 @@ public class AuthController : ControllerBase
     }
     
     /// <summary>
-    /// Регистрация пользователя в системе производится только администратором
+    /// Регистрация пользователя. Только администратор
     /// </summary>
-    /// <param name="login">Логин, который используется в формате регистрации пользвователя</param>
-    /// <param name="password">Пароль пользователя в системе, через который он будет проводить регистрацию</param>
-    /// <returns>HTTP ответ с кодами 400 и 200</returns>
+    /// <param name="registrationModel">Модель представления данных авторизации</param>
+    /// <response code="200">Успешное выполнение</response>
+    /// <response code="400">Ошибка API или такой пользователь уже существует</response>
     [HttpPost(Name = "Register")]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Register(string? login, string? password)
+    public async Task<IActionResult> Register([FromBody]RegistrationModel registrationModel)
     {
         try
         {
-            if (string.IsNullOrWhiteSpace(login) ||
-                string.IsNullOrWhiteSpace(password)
+            if (string.IsNullOrWhiteSpace(registrationModel.Email) ||
+                string.IsNullOrWhiteSpace(registrationModel.Password)
                )
-                return BadRequest("Неправльные данные запроса");
+                return BadRequest("Неправильные данные запроса");
 
             var user = await DatabaseController.GetInstance().Users!
-                .FirstOrDefaultAsync(x => x.Username == login);
+                .FirstOrDefaultAsync(x => x.Email == registrationModel.Email);
 
             // Отрабатываем ошибку уже созданного пользователя
             if (user != null)
@@ -98,12 +107,14 @@ public class AuthController : ControllerBase
 
             await DatabaseController.GetInstance().Users!.AddAsync(new User()
             {
-                Username = login,
-                Password = Sha256Helper.Convert(password),
+                Email = registrationModel.Email,
+                Password = Sha256Helper.Convert(registrationModel.Password),
                 Role = "Client"
             });
 
-            return Ok($"Пользователь с логином {login} добавлен");
+            await DatabaseController.GetInstance().SaveChangesAsync();
+            
+            return Ok($"Пользователь с логином {registrationModel.Email} добавлен");
         }
         catch (Exception e)
         {

@@ -8,7 +8,6 @@ using Microsoft.IdentityModel.Tokens;
 
 #endregion
 
-
 namespace Hackathon.Core.Models;
 
 /// <summary>

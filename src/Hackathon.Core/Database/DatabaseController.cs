@@ -1,6 +1,5 @@
 #region Usings
 
-using System.Runtime.CompilerServices;
 using Hackathon.Core.Exceptions;
 using Hackathon.Domain.Entity;
 using Microsoft.EntityFrameworkCore;
@@ -92,6 +91,16 @@ public class DatabaseController : DbContext
     /// Пользователи системы
     /// </summary>
     public DbSet<User>? Users { get; set; }
+    
+    /// <summary>
+    /// Все товары, что есть в данный момент в системе
+    /// </summary>
+    public DbSet<Product>? Products { get; set; }
+    
+    /// <summary>
+    /// Таблица всех заявок пользователей
+    /// </summary>
+    public DbSet<Order>? Orders { get; set; }
 
     #endregion
     

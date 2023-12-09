@@ -13,20 +13,40 @@ public class User
     public int Id { get; set; }
     
     [NotNull]
-    public string? Username { get; set; }
+    public string? Email { get; set; }
     
     [NotNull]
     public string? Password { get; set; }
     
-    [NotNull]
+    /// <summary>
+    /// Роль пользователя в системе
+    /// </summary>
     public string? Role { get; set; }
     
     /// <summary>
-    /// ФИО пользователя
+    /// Имя пользователя
     /// </summary>
     public string? Name { get; set; }
     
+    /// <summary>
+    /// Фамилия пользователя
+    /// </summary>
+    public string? Surname { get; set; }
+    
+    /// <summary>
+    /// Номер телефона формата +79266776767
+    /// </summary>
+    public string? Phone { get; set; }
+    
+    /// <summary>
+    /// Дата регистрации пользователя
+    /// </summary>
     public string? RegistrationDate { get; set; }
     
-    public string? LastLogin { get; set; }
+    /// <summary>
+    /// День рождения пользователя
+    /// </summary>
+    public string? DateOfBirth { get; set; }
+    
+    public string? Company { get; set; }
 }

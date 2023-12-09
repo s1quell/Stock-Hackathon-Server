@@ -1,20 +1,73 @@
 #region Usings
 
-using System.Text;
 using Hackathon.Core.Configuration;
 using Hackathon.Core.Database;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 
 #endregion
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenAnyIP(80);
+    
+});
 
 builder.Services.AddControllers();
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddAuthorization();
+
+// ------ Конфигурирование отображения документации ------ //
+builder.Services.AddSwaggerGen(options =>
+{
+    var basePath = AppContext.BaseDirectory;
+
+    var xmlPath = Path.Combine(basePath, "Hackathon.xml");
+    options.IncludeXmlComments(xmlPath);
+    
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = @"Введите JWT токен авторизации.",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        BearerFormat = "JWT",
+        Scheme = "Bearer"
+    });
+    
+    options.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Version = "v1.0.1",
+        Title = "API приложение для Хакатона",
+        Description = "Сервер автоматизации логистики в торговле на маркетплейсах. Проект написан на языке C# с использованием фрейморка ASP.NET Core\n\nПочти на всех методах требуется авторизация пользователя в системе",
+        Contact = new OpenApiContact
+        {
+            Name = "Разработкой проекта занималась команда ODIN",
+            Url = new Uri("https://t.me/@dequizz")
+        }
+    });
+    
+    options.AddSecurityRequirement(new OpenApiSecurityRequirement()
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                },
+            },
+            new List<string>()
+        }
+    });
+});
+
 
 // ----- Конфигурирование конфигураторов ----- //
 JwtConfigurator.Audience = builder.Configuration["JWT:Audience"];
@@ -51,11 +104,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 var app = builder.Build();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+// ------ Конфигурирование документации API ------ //
+app.UseSwagger();
+app.UseSwaggerUI();
+
 
 // Редирект с HTTP на HTTPS
 app.UseHttpsRedirection();
@@ -83,5 +135,8 @@ catch (Exception e)
 {
     app.Logger.LogCritical(e.Message);
 }
+
+
+
 
 app.Run();
